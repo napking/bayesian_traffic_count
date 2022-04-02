@@ -6,6 +6,38 @@ from pathlib import Path
 from datetime import datetime
 import pandas as pd
 
+#%%
+
+def main():
+    """ Runs data processing scripts to turn raw data from (../raw) into
+        cleaned data ready to be analyzed (saved in ../processed).
+    """
+    logger = logging.getLogger(__name__)
+    logger.info('making final data set from raw data')
+    
+
+
+if __name__ == '__main__':
+    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(level=logging.INFO, format=log_fmt)
+
+    # Useful for finding various files
+    project_dir = Path(__file__).resolve().parents[2]
+    data_dir = project_dir / 'data/raw/My Traffic Volumes'
+
+    # find .env automagically by walking up directories until it's found, then
+    # load up the .env entries as environment variables
+
+
+    main()
+
+#%%
+
+def get_random_file(directory=data_dir):
+    from random import choice
+    
+    files = [f for f in Path(directory).glob(pattern = '*.xls')] #glob yields all files matching the pattern argument. '*' means all
+    return choice(files)
 
 #%%
 
@@ -23,7 +55,6 @@ def file_loop_test(directory=data_dir):
     print("Files and directories in the specified path:")
     files = Path(directory).glob(pattern = '*.xls') #glob yields all files matching the pattern argument. '*' means all
     for file in files:
-        data_table, meta = parse_excel(file)
         print(meta['Location'])
     return file
 
@@ -58,6 +89,7 @@ def get_names_from_location(string):
     cross_street = result.group('crossName') + ' ' + result.group('crossType').lower()
     reference = result.group('reference').lower()
     
+    # TODO
     '''
         Could do a method to change all Cross Reference to either 'West of' or 'North of'
             ie. convert 'East of' and 'South of'
@@ -102,7 +134,8 @@ def parse_excel(file = data_dir / '083 Avenue West of 098 Street 2015-Sep-23-201
 
     Returns
     -------
-    DataFrame
+    DataFrame in tall format
+    meta data of the analysis site
     '''    
     df = pd.read_excel(file, header=None)  
     meta = get_meta_data(df)
@@ -120,10 +153,13 @@ def parse_excel(file = data_dir / '083 Avenue West of 098 Street 2015-Sep-23-201
     
     
     return data_table, meta
-    
+
+    '''    
+    What is the output of this function?
+        -A dict of meta data
+        -the data key contains a Tall format, multi-indexed dataframe
     '''
-    Continue Working here
-    '''
+
 #%%
 def get_data_table(df,start,end,meta,num_header_rows=3):
     '''
@@ -146,18 +182,17 @@ def get_data_table(df,start,end,meta,num_header_rows=3):
     df = df.iloc[start - num_header_rows : end]
     df = df.reset_index(drop=True)
     
-    # adjust the first column to act as index
     '''
-    # TODO
-    This could be a lot better, rather than writing directly into a cell
+    *** want to clean up the merged cells from excel and use the multiple rows that act as headers
+    This is what the header looks like at this point:
+                                 Merged Cells     Merged Cells
+                                 _____________________________________________
+                                 1    2      3     4    5      6   7    8
+    Header 1 | NaN             Saturday  NaN    NaN  Avg.  NaN    NaN NaN  NaN
+    Header 2 | NaN  2017-08-15 00:00:00  NaN    NaN   NaN  NaN    NaN NaN  NaN
+    Header 3 | NaN                  NBD  SBD  Total   NBD  SBD  Total NaN  NaN    
+    
     '''
-    """
-    df.iloc[0,0]='Weekday'
-    df.iloc[1,0] = 'Date'
-    df.iloc[2,0] = 'Direction'
-    df = df.set_index(0)
-    """
-    # want to clean up the merged cells and multiple rows used as headers3
     
     # forward fill "Avg." into the second header row
     idx_avg = get_index(df, 'Avg.')
@@ -169,37 +204,32 @@ def get_data_table(df,start,end,meta,num_header_rows=3):
     # fill in the remaining NaNs with an empty string
     df.iloc[0 : num_header_rows].fillna(value='')
     
-    # first column is the observation hour
-    #df.iloc[num_header_rows - 1 ,0] = "Obs_Hour"
+    # set the index to observation hour
+    df = df.set_index(0)
+    df.index.name = 'Obs_Hour'
     
     # set columns from the header rows and drop them
     df.columns = [df.iloc[i] for i in range(num_header_rows) ]
     df = df.iloc[num_header_rows:]
     
-    # drop the first level of the multi-index
-    df.columns = df.columns.droplevel(level=0)
+    # set column names
+    df.columns.names = ['Weekday', 'Date', 'Direction']
+    
+    # remove any columns that are entirely NA
+    df = df.dropna(axis='columns', how='all')
     
     # convert to Tall format
-    '''
-    # TODO: Doesnt preserve observation hour in the melting
-    '''
-    df = df.melt()
+    df = df.melt(value_name='count', ignore_index=False)
     # add site identifying values
     df['Site Number'] = meta['Site Number']
     # set street names as identifying values
     df['Main Street'] = meta['Main Street']
     df['Location'] = meta['Location']
     
+    # no longer need to have "observation hour" as the index
+    df.reset_index(inplace=True)
     
     return df
-    
-    '''
-    continue working here
-    
-    What is the output of this function?
-        -A dict of meta data
-        -the data key contains a Tall format, multi-indexed dataframe
-    '''
 
 #%%    
 def get_meta_data(df):
@@ -229,13 +259,12 @@ def get_meta_data(df):
         get_names_from_location(meta['Location']) 
         )
     
-        
     return meta
         
 
 #%%   
 def get_index(df, search_pattern):
-    #unpackage this code:
+    #explanation of this code:
         #df.isin([*]) returns a true/false table of the entire dataframe where * is found
         #df[ above_blah ] returns a NaN / value table as above
         # {}.stack() reshapes the dataframe into a multiIndex dataframe with rows only where * was found
@@ -246,10 +275,12 @@ def get_index(df, search_pattern):
 
 #%%
 
-def get_raw_inputs(data_dir, type='mid-block'):
+def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
+    
+    sites = {}
     # Start a Loop of all files
     # glob searches for all files that match the given pattern. "*.xls" only finds excel files
-    data_files = Path(data_dir).glob(pattern = "*.xls")
+    data_files = Path(directory).glob(pattern = "*.xls")
     for file in data_files:
         try:
             file_date = get_date_from_filename(file.stem)
@@ -259,39 +290,19 @@ def get_raw_inputs(data_dir, type='mid-block'):
             continue
             
         # Select only files after a specific year.
-        if file_date['year'] >= 1999:
-            print(file_date['month'])
+        if file_date['year'] >= start_year:
             
-            '''
-            Do something to get the dataframe and meta data
-            
-            parse_excel(file)
-            return a dictionary containing meta data and dataframe
-            '''
+            data_table, meta = parse_excel(file)
+            if not meta['Site Number'] in sites:
+                sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
+                print(f'{file.stem} successfully added')
+            else:
+                # TODO
+                # merge meta and data
+                print(f'Site number {meta["Site Number"]} already exists. \n' \
+                      f'~~~Source file is {file.stem}')
             
         else:
             continue
-#%%
-
-def main():
-    """ Runs data processing scripts to turn raw data from (../raw) into
-        cleaned data ready to be analyzed (saved in ../processed).
-    """
-    logger = logging.getLogger(__name__)
-    logger.info('making final data set from raw data')
     
-
-
-if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
-
-    # Useful for finding various files
-    project_dir = Path(__file__).resolve().parents[2]
-    data_dir = project_dir / 'data/raw/My Traffic Volumes'
-
-    # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
-
-
-    main()
+    return sites
