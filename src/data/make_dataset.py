@@ -55,7 +55,7 @@ def file_loop_test(directory=data_dir):
     print("Files and directories in the specified path:")
     files = Path(directory).glob(pattern = '*.xls') #glob yields all files matching the pattern argument. '*' means all
     for file in files:
-        print(meta['Location'])
+        print(file.stem)
     return file
 
 #%%
@@ -301,8 +301,65 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
                 # merge meta and data
                 print(f'Site number {meta["Site Number"]} already exists. \n' \
                       f'~~~Source file is {file.stem}')
+                fix_meta(master_meta = sites[meta['Site Number']]['meta'], append_meta = meta)
             
         else:
             continue
     
     return sites
+
+#%%
+def fix_meta(master_meta, append_meta):
+    '''
+    master_meta and append_meta _*should*_ have the same key->value structure
+        (if not, then something has gone horribly wrong)
+    Certain values should be the same between dictionaries, they are identifiers for the site:
+        Cross Reference
+        Cross Street
+        Location
+        Main Street
+        Site Number
+            (if these aren't the same then something has gone horribly wrong)
+    Other values are unique for the specific observation "blitz" that collected the data:
+        ADT
+        Peak Hour AM
+        Peak Hour AM ref
+        Peak Hour PM
+        Peak Hour PM ref
+            These values should be converted into a list
+            The order of this list *should never change*, otherwise the relationship between lists is lost
+            
+            *** The alternate solution is to assign keys to values representing the source excel file
+    '''
+    
+    # Check the immutable, aka. common values, between the dictionaries
+    immutable_keys = {'Cross Reference','Cross Street','Location','Main Street','Site Number'}
+    master_immutable = {key:value for key,value in master_meta.items() if key in immutable_keys}
+    append_immutable = {key:value for key,value in append_meta.items() if key in immutable_keys}
+    if not master_immutable == append_immutable:
+        print(f'ERROR! The meta data for Site Number {master_meta["Site Number"]} is not the same between master and append')
+        # TODO: Do something when this error occurs
+        # initial experience susggests the source is in "Location" names from excel files
+            # see the regex in get_names_from_location
+            
+        # perhaps an intermediary step is to create a new entry in sites, eg. site_number: ######-A
+        
+        
+    # Check the mutable, aka. the varrying values
+    mutable_keys = {'ADT', 'Peak Hour AM', 'Peak Hour AM ref', 'Peak Hour PM', 
+                    'Peak Hour PM ref'}
+    # loop through master_meta
+    for key,value in master_meta.items():
+        if key not in mutable_keys:
+            # do nothing
+            continue
+        elif not type(master_meta[key]) == list:
+            # convert to a list type
+            master_meta[key] = [master_meta[key]]
+        # append the meta[key] into the list for the master[key]
+        master_meta[key].append(append_meta[key])
+    
+    print(f'Site: {master_meta["Site Number"]} has appended the new values')
+    
+    return
+
