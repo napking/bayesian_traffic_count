@@ -301,7 +301,8 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
                 # merge meta and data
                 print(f'Site number {meta["Site Number"]} already exists. \n' \
                       f'~~~Source file is {file.stem}')
-                fix_meta(master_meta = sites[meta['Site Number']]['meta'], append_meta = meta)
+                if not append_duplicate_site_data(master_meta = sites[meta['Site Number']]['meta'], append_meta = meta):
+                    sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
             
         else:
             continue
@@ -309,7 +310,7 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
     return sites
 
 #%%
-def fix_meta(master_meta, append_meta):
+def append_duplicate_site_data(master_meta, append_meta):
     '''
     master_meta and append_meta _*should*_ have the same key->value structure
         (if not, then something has gone horribly wrong)
@@ -343,7 +344,9 @@ def fix_meta(master_meta, append_meta):
             # see the regex in get_names_from_location
             
         # perhaps an intermediary step is to create a new entry in sites, eg. site_number: ######-A
-        
+        append_meta['Site Number'] = str(append_meta['Site Number']) + 'A'
+        print(f'\t  Changed Site Number: {append_meta["Site Number"]}')
+        return False
         
     # Check the mutable, aka. the varrying values
     mutable_keys = {'ADT', 'Peak Hour AM', 'Peak Hour AM ref', 'Peak Hour PM', 
@@ -361,5 +364,5 @@ def fix_meta(master_meta, append_meta):
     
     print(f'Site: {master_meta["Site Number"]} has appended the new values')
     
-    return
+    return True
 
