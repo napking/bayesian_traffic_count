@@ -301,16 +301,19 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
                 # merge meta and data
                 print(f'Site number {meta["Site Number"]} already exists. \n' \
                       f'~~~Source file is {file.stem}')
-                if not append_duplicate_site_data(master_meta = sites[meta['Site Number']]['meta'], append_meta = meta):
+                
+                # Try to append meta-data into sites
+                if not append_duplicate_site_meta(master_meta = sites[meta['Site Number']]['meta'], append_meta = meta):
+                    # if immutable keys are not identical, create a new site
                     sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
-            
+                
         else:
             continue
     
     return sites
 
 #%%
-def append_duplicate_site_data(master_meta, append_meta):
+def append_duplicate_site_meta(master_meta, append_meta):
     '''
     master_meta and append_meta _*should*_ have the same key->value structure
         (if not, then something has gone horribly wrong)
