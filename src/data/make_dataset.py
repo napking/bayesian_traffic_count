@@ -294,19 +294,25 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
             
             data_table, meta = parse_excel(file)
             if not meta['Site Number'] in sites:
+                # If site number is not already in sites, simply create a new key-value pair
                 sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
                 print(f'{file.stem} successfully added')
             else:
-                # TODO
                 # merge meta and data
                 print(f'Site number {meta["Site Number"]} already exists. \n' \
                       f'~~~Source file is {file.stem}')
                 
                 # Try to append meta-data into sites
-                if not append_duplicate_site_meta(master_meta = sites[meta['Site Number']]['meta'], append_meta = meta):
+                if not append_duplicate_site_meta(
+                        master_meta= sites[meta['Site Number']]['meta'], 
+                        append_meta= meta):
                     # if immutable keys are not identical, create a new site
                     sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
                 
+                # Try to append dataframe into sites
+                sites[meta['Site Number']]['data']= append_duplicate_site_data(
+                    master_data= sites[meta['Site Number']]['data'], 
+                    append_data= data_table)
         else:
             continue
     
@@ -373,3 +379,6 @@ def append_duplicate_site_meta(master_meta, append_meta):
     
     return True
 
+#%%
+def append_duplicate_site_data(master_data, append_data):
+    return pd.concat([master_data, append_data]).reset_index(drop=True)
