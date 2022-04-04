@@ -334,7 +334,7 @@ def append_duplicate_site_data(master_meta, append_meta):
     '''
     
     # Check the immutable, aka. common values, between the dictionaries
-    immutable_keys = {'Cross Reference','Cross Street','Location','Main Street','Site Number'}
+    immutable_keys = {'Cross Reference','Cross Street','Main Street','Site Number'}
     master_immutable = {key:value for key,value in master_meta.items() if key in immutable_keys}
     append_immutable = {key:value for key,value in append_meta.items() if key in immutable_keys}
     if not master_immutable == append_immutable:
@@ -361,6 +361,10 @@ def append_duplicate_site_data(master_meta, append_meta):
             master_meta[key] = [master_meta[key]]
         # append the meta[key] into the list for the master[key]
         master_meta[key].append(append_meta[key])
+        
+    # check the 'Location' tag. This is raw from the excel file, with little processing.
+        # possibility of erroneous/non-standard entries
+        
     
     print(f'Site: {master_meta["Site Number"]} has appended the new values')
     
