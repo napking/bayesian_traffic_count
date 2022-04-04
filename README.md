@@ -2,6 +2,9 @@ bayesian traffic count
 ==============================
 
 Using Bayesian methods to reduce uncertainty in traffic count data
+<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+
+Current progress is only within src > data > make_dataset.py
 
 Project Organization
 ------------
