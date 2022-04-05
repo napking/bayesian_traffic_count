@@ -53,7 +53,7 @@ Project Organization
     │   │   └── train_model.py
     │   │
     │   ├── util           <- Scripts for utility purposes, to store and retrieve data etc.
-    │   │   └── build_features.py
+    │   │   └── get_data.py
     |   |
     │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
     │       └── visualize.py
