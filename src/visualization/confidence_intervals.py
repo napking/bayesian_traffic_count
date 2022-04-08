@@ -14,11 +14,11 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.append(str(PROJECT_ROOT))
-
+DATA_DIR = PROJECT_ROOT.parent.joinpath('data/interim')
 
 import util
 
-sites = util.get_midblock_data(PROJECT_ROOT.parent.joinpath('data/interim') )
+sites = util.get_midblock_data(DATA_DIR)
 
 #%%
 
