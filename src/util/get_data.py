@@ -22,13 +22,22 @@ def get_midblock_data(directory):
     with shelve.open(str(directory / 'traffic_data')) as shelf:
         return shelf['midblock_sites']
     
-def get_site_from_street_name(name, suffix: str, sites):
+def get_inverted_sites(sites):
+    lookup = {}
+    for site_num, info in sites.items():
+        if info['meta']['Main Street'] in lookup:
+            lookup[info['meta']['Main Street']].append({site_num: info['meta']['Cross Street']})
+        else:
+            lookup[info['meta']['Main Street']] = [{site_num: info['meta']['Cross Street']}]
+    return lookup
+
+def get_sites_from_street_name(name, suffix: str, sites):
     
     name = str(name)
     full_name = name + ' ' + suffix
-    return
-
-
+    
+    lookup = get_inverted_sites(sites)
+    return lookup[full_name]
 
 
 #%%
