@@ -31,12 +31,15 @@ def get_inverted_sites(sites):
             lookup[info['meta']['Main Street']] = [{site_num: info['meta']['Cross Street']}]
     return lookup
 
-def get_sites_from_street_name(name, suffix: str, sites):
+def get_sites_from_street_name(name, suffix: str, sites, **kwargs):
     
     name = str(name)
     full_name = name + ' ' + suffix
     
     lookup = get_inverted_sites(sites)
+    
+    if kwargs.get('as_list', False):
+        return [list(site.keys())[0] for site in lookup[full_name]]    
     return lookup[full_name]
 
 
