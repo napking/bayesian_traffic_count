@@ -20,9 +20,7 @@ import util
 
 sites = util.get_midblock_data(DATA_DIR)
 
-#%%
-
-# temporary method: merge all dataframes
+#%% temporary method: merge all dataframes
 
 data = pd.DataFrame()
 
@@ -34,7 +32,7 @@ data = data[ ~data['Direction'].str.contains('total', case=False)]
 
 data['Weekend_TF'] = data['Weekday'].str.contains('Saturday|Sunday', case=False)
 
-group_count = data.groupby(['Site Number','Direction','Obs_Hour','Weekend_TF'])['count']
+group_count = data.groupby(['Site Number','Direction','Obs Hour','Weekend_TF'])['count']
 stats = group_count.agg(['mean','std','count']).sort_values(by=['count','mean','std'])
 
 # create a tuple of confidence intervals
@@ -46,3 +44,8 @@ stats = pd.merge(stats.reset_index(), ci, how = 'outer', left_index = True, righ
 # get the total range of the 95% confidence interval
 stats['ci_range'] = stats['95_upper'] - stats['95_lower']
 stats.sort_values(by=['ci_range'], ascending=False, inplace=True)
+
+#%% get specific sites by name
+
+mask = util.get_sites_from_street_name(82, 'avenue', sites, as_list=True)
+subset = stats[stats['Site Number'].isin(mask)]

@@ -205,7 +205,7 @@ def get_data_table(df,start,end,meta,num_header_rows=3):
     
     # set the index to observation hour
     df = df.set_index(0)
-    df.index.name = 'Obs_Hour'
+    df.index.name = 'Obs Hour'
     
     # set columns from the header rows and drop them
     df.columns = [df.iloc[i] for i in range(num_header_rows) ]
@@ -219,14 +219,31 @@ def get_data_table(df,start,end,meta,num_header_rows=3):
     
     # convert to Tall format
     df = df.melt(value_name='count', ignore_index=False)
+    # no longer need to have "observation hour" as the index
+    df.reset_index(inplace=True)
+    # remove Avg. values
+    df = df[~df['Date'].astype(str).str.contains('avg', case=False)]
+    # fix date and time information
+    df['Obs Hour'] = pd.to_datetime(df['Obs Hour'].astype(str), format='%H:%M:%S').dt.time
+    df['Date'] = pd.to_datetime(df['Date'].astype(str), format='%Y-%m-%d').dt.date
+    df['Obs Period'] = df.apply(
+        lambda r : pd.Timestamp.combine(r['Date'], 
+                                        r['Obs Hour']), 
+        axis=1).dt.to_period('H')
+    '''
+    At this point, the "Date", "Obs Hour", and "Weekday" columns are redundant.
+    All this information is captured within the "Obs Period" datetime object
+    #TODO: Remove redundant columns
+        Waiting to confirm that downstream pipeline can retrieve the necessary
+        information from the datetime object
+    '''
     # add site identifying values
     df['Site Number'] = meta['Site Number']
     # set street names as identifying values
     df['Main Street'] = meta['Main Street']
     df['Location'] = meta['Location']
     
-    # no longer need to have "observation hour" as the index
-    df.reset_index(inplace=True)
+
     
     return df
 
