@@ -51,4 +51,22 @@ if __name__ == '__main__':
     PROJECT_ROOT = Path(__file__).resolve().parent.parent
     DATA_DIR = PROJECT_ROOT.parent.joinpath('data/interim')
     
-    sites = get_midblock_data(DATA_DIR)
+    while True:
+        try:
+            response = input("Do you want to retrieve(r) or store(s) midblock data?").lower().strip()
+            if response == "r" or response == "retrieve":
+                sites = sites = get_midblock_data(DATA_DIR)
+                print('~~\nThe midblock information in interim data is now in the "sites" variable')
+                break
+            elif response == "s" or response == "store":
+                store_midblock_data(DATA_DIR, sites)
+                print('~~\nThe data currently stored in the "sites" variable was saved')
+                break
+            elif response == "exit":
+                print('~~\nNo data was stored or retrieved')
+                break
+            else:
+                print('Invalid input. Try Again. \n -> Type "exit" to leave.')
+        except:
+            print('Invalid input. Try Again')
+    
