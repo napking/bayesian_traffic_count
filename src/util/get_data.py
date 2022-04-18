@@ -23,6 +23,7 @@ def get_midblock_data(directory):
         return shelf['midblock_sites']
     
 def get_inverted_sites(sites):
+    # returns a dictionary with Main Street as the parent key
     lookup = {}
     for site_num, info in sites.items():
         if info['meta']['Main Street'] in lookup:
@@ -32,7 +33,27 @@ def get_inverted_sites(sites):
     return lookup
 
 def get_sites_from_street_name(name, suffix: str, sites, **kwargs):
-    
+    '''
+    Parameters
+    ----------
+    name : string or int
+        the common name for the street
+    suffix : str
+        the street name suffix (ie. 'Avenue')
+        must match the spelling in source document
+    sites : dictionary object
+        the interim data strucutre as generated in make_dataset.py
+    **kwargs : dictionary object
+        optional arguments
+        as_list = True
+            provide a list of only site numbers
+
+    Returns
+    -------
+    list
+        a list of site numbers and accompanying cross street information
+        exception: as_list = True (see above)
+    '''
     name = str(name)
     full_name = name + ' ' + suffix
     
