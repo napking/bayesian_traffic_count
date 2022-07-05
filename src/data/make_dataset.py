@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+import geopandas
+from config.definitions import ROOT_DIR, DATA_DIR
 
 #%%
 
@@ -22,6 +24,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format=log_fmt)
 
     # Useful for finding various files
+    # TODO: Update to use ROOT_DIR from config/definitions.py
     project_dir = Path(__file__).resolve().parents[2]
     data_dir = project_dir / 'data/raw/My Traffic Volumes'
 
@@ -29,6 +32,7 @@ if __name__ == '__main__':
     # load up the .env entries as environment variables
 
     main()
+
 
 #%%
 
