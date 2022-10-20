@@ -76,7 +76,7 @@ if __name__ == '__main__':
         try:
             response = input("Do you want to retrieve(r) or store(s) midblock data?").lower().strip()
             if response == "r" or response == "retrieve":
-                sites = sites = get_midblock_data(DATA_DIR)
+                sites = get_midblock_data(DATA_DIR)
                 print('~~\nThe midblock information in interim data is now in the "sites" variable')
                 break
             elif response == "s" or response == "store":

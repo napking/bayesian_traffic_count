@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
-import geopandas
+# import geopandas
 from config.definitions import ROOT_DIR, DATA_DIR
 
 #%%
@@ -26,7 +26,7 @@ if __name__ == '__main__':
     # Useful for finding various files
     # TODO: Update to use ROOT_DIR from config/definitions.py
     project_dir = Path(__file__).resolve().parents[2]
-    data_dir = project_dir / 'data/raw/My Traffic Volumes'
+    midblock_dir = project_dir / 'data/raw/My Traffic Volumes'
 
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
 #%%
 
-def get_random_file(directory=data_dir):
+def get_random_file(directory=midblock_dir):
     from random import choice
     
     files = [f for f in Path(directory).glob(pattern = '*.xls')] #glob yields all files matching the pattern argument. '*' means all
@@ -44,11 +44,11 @@ def get_random_file(directory=data_dir):
 
 #%%
 
-def file_loop_test(directory=data_dir):
+def file_loop_test(directory=midblock_dir):
     '''
     Parameters
     ----------
-    data_dir : TYPE PATH
+    midblock_dir : TYPE PATH
 
     Returns
     -------
@@ -129,7 +129,7 @@ def get_date_from_filename(filename = '083 Avenue West of 098 Street 2015-Sep-23
 
 #%%
 
-def parse_excel(file = data_dir / '083 Avenue West of 098 Street 2015-Sep-23-2015-Sep-28.xls'):
+def parse_midblock_excel(file = midblock_dir / '083 Avenue West of 098 Street 2015-Sep-23-2015-Sep-28.xls'):
     '''
     Parameters
     ----------
@@ -152,7 +152,7 @@ def parse_excel(file = data_dir / '083 Avenue West of 098 Street 2015-Sep-23-201
     end = df.index[df[0] == 'Total'][0]
     
     # Send this stuff to get the data table only
-    data_table = get_data_table(df,start,end,meta)
+    data_table = get_midblock_data_table(df,start,end,meta)
     
     
     return data_table, meta
@@ -164,7 +164,7 @@ def parse_excel(file = data_dir / '083 Avenue West of 098 Street 2015-Sep-23-201
     '''
 
 #%%
-def get_data_table(df,start,end,meta,num_header_rows=3):
+def get_midblock_data_table(df,start,end,meta,num_header_rows=3):
     '''
     Parameters
     ----------
@@ -295,13 +295,36 @@ def get_index(df, search_pattern):
 
 #%%
 
-def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
+def get_traffic_sites(directory=midblock_dir, start_year=1999, **kwargs):
     
     sites = {}
+    
+    if kwargs.get('midblock') or kwargs.get('link'):
+        # do get midblock sites
+        # run custom function which returns sites dict
+        midblock_sites = get_midblock_sites(directory, start_year)
+        if midblock_sites:
+            sites = sites | midblock_sites
+    
+    if kwargs.get('node') or kwargs.get('intersection') or kwargs.get('turning'):
+        # do get turning movement sites
+        # run custom function which returns sites dict
+        dummy = True
+    
+    sites = {}
+    
+def get_midblock_sites(directory, start_year):
+    sites = {}
+    
+    # confirm that directory is good
+    if directory.name != 'My Traffic Volumes':
+        print('~~ Incorrect Directory for get_midblock_sites()')
+        return None
+    
     # Start a Loop of all files
     # glob searches for all files that match the given pattern. "*.xls" only finds excel files
-    data_files = Path(directory).glob(pattern = "*.xls")
-    for file in data_files:
+    midblock_files = Path(directory).glob(pattern = "*.xls")
+    for file in midblock_files:
         try:
             file_date = get_date_from_filename(file.stem)
         except:
@@ -312,7 +335,7 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
         # Select only files after a specific year.
         if file_date['year'] >= start_year:
             
-            data_table, meta = parse_excel(file)
+            data_table, meta = parse_midblock_excel(file)
             if not meta['Site Number'] in sites:
                 # If site number is not already in sites, simply create a new key-value pair
                 sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
@@ -337,6 +360,37 @@ def get_traffic_sites(directory=data_dir, type='mid-block', start_year=1999):
             continue
     
     return sites
+
+def get_turning_sites(directory, start_year):
+    sites = {}
+    
+    # confirm that directory is good
+    if directory.name != 'My Turning Movements':
+        print('~~ Incorrect Directory for get_turning_sites()')
+        return None
+    
+    # start loop of all files
+    # glob searches for all files that matche the given pattern.
+    turning_files = Path(directory).glob(pattern = '*.xls')
+    
+    #TODO: switch to looping through all files
+    #TODO: this is nearly identical to get_midblock sites : prevent duplication by moving to common function
+    file = Path('C:/Users/Dave/MyPythonScripts/bayesian_traffic_count/data/raw/My Turning Movements/081 Avenue and 104 Street 2014-Mar-11.xls')
+    try: 
+        file_date = get_date_from_filename(file.stem)
+    except:
+        file_date['year'] = 'None'
+        print(f'{file.stem} could not be parsed')
+    
+    
+    if file_date['year'] >= start_year:
+        data_table, meta = parse_turning_excel(file)
+        
+        #TODO: do the rest of the things
+
+#%%
+def parse_turning_excel(file = project_dir / 'data/raw/My Turning Movements/081 Avenue and 104 Street 2014-Mar-11.xls'):
+    
 
 #%%
 def append_duplicate_site_meta(master_meta, append_meta):

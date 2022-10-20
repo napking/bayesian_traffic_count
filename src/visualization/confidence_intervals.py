@@ -41,7 +41,7 @@ group_count = data.groupby(['Site Number','Direction','Obs Hour','Weekend_TF'])[
 stats = group_count.agg(['mean','std','count']).sort_values(by=['count','mean','std'])
 
 # create a tuple of confidence intervals
-ci = st.t.interval(alpha=0.95, df=stats['count'] - 1, loc=stats['mean'], scale=stats['std'])
+ci = st.t.interval(confidence=0.95, df=stats['count'] - 1, loc=stats['mean'], scale=stats['std'])
 # convert the tuple into a dataframe (transposed)
 ci = pd.DataFrame(list(zip(*ci)), columns=['95_lower','95_upper'])
 # merge the confidence intervals into the stats
