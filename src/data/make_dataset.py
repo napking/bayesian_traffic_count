@@ -41,7 +41,7 @@ if __name__ == '__main__':
     c_handler = logging.StreamHandler()
     f_handler.setLevel(logging.DEBUG)
     c_handler.setLevel(logging.WARNING)
-    log_fmt = "[%(filename)s:%(lineno)s@%(asctime)s - %(funcName)20s():%(levelname)9s ] %(message)s"
+    log_fmt = "[%(filename)s:%(lineno)s@%(asctime)s - %(funcName)40s():%(levelname)9s ] %(message)s"
     f_handler.setFormatter(logging.Formatter(log_fmt))
     c_log_fmt = "[%(lineno)s@%(asctime)s - %(funcName)s(): %(message)s"
     c_handler.setFormatter(logging.Formatter(c_log_fmt))
@@ -323,14 +323,16 @@ def get_traffic_sites(directory=midblock_dir, start_year=1999, **kwargs):
         # run custom function which returns sites dict
         midblock_sites = get_midblock_sites(directory, start_year)
         if midblock_sites:
+            logger.debug('merging sites dict')
             sites = sites | midblock_sites
+            logger.debug(f'sites dict has {len(sites)} entries')
     
     if kwargs.get('node') or kwargs.get('intersection') or kwargs.get('turning'):
         # do get turning movement sites
         # run custom function which returns sites dict
         dummy = True
     
-    sites = {}
+    return sites
     
 def get_midblock_sites(directory, start_year):
     logger.debug('start'.center(20,'~'))
@@ -347,6 +349,7 @@ def get_midblock_sites(directory, start_year):
     # glob searches for all files that match the given pattern. "*.xls" only finds excel files
     midblock_files = Path(directory).glob(pattern = "*.xls")
     for file in tqdm(midblock_files, desc='looping midblock excel files', unit='Files'):
+        logger.debug('<>new file<>')
         logger.debug(f'{file.stem}')
         try:
             file_date = get_date_from_filename(file.stem)
@@ -386,6 +389,7 @@ def get_midblock_sites(directory, start_year):
         else:
             continue
     
+    logger.debug('done'.center(20,'~'))
     return sites
 
 
