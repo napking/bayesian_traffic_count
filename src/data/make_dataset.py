@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+from tqdm import tqdm
 # import geopandas
 from config.definitions import ROOT_DIR, DATA_DIR
 
@@ -31,8 +32,6 @@ def main():
     """
     logger.debug('start'.center(20,'~'))
     logger.info('making final data set from raw data')
-    
-    foo = get_random_file()
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.DEBUG)
@@ -42,7 +41,7 @@ if __name__ == '__main__':
     c_handler = logging.StreamHandler()
     f_handler.setLevel(logging.DEBUG)
     c_handler.setLevel(logging.WARNING)
-    log_fmt = "[%(filename)s:%(lineno)s@%(asctime)s - %(funcName)15s():%(levelname)9s ] %(message)s"
+    log_fmt = "[%(filename)s:%(lineno)s@%(asctime)s - %(funcName)20s():%(levelname)9s ] %(message)s"
     f_handler.setFormatter(logging.Formatter(log_fmt))
     c_log_fmt = "[%(lineno)s@%(asctime)s - %(funcName)s(): %(message)s"
     c_handler.setFormatter(logging.Formatter(c_log_fmt))
@@ -69,7 +68,7 @@ def file_loop_test(directory=midblock_dir):
     logger.debug('start'.center(20,'~'))
     logger.info("Files and directories in the specified path:")
     files = Path(directory).glob(pattern = '*.xls') #glob yields all files matching the pattern argument. '*' means all
-    for file in files:
+    for file in tqdm(files):
         logger.info(file.stem)
         logger.warning('function output recorded in the log file')
     return file
@@ -347,7 +346,7 @@ def get_midblock_sites(directory, start_year):
     # Start a Loop of all files
     # glob searches for all files that match the given pattern. "*.xls" only finds excel files
     midblock_files = Path(directory).glob(pattern = "*.xls")
-    for file in midblock_files:
+    for file in tqdm(midblock_files, desc='looping midblock excel files', unit='Files'):
         logger.debug(f'{file.stem}')
         try:
             file_date = get_date_from_filename(file.stem)
