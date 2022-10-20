@@ -8,39 +8,50 @@ import pandas as pd
 # import geopandas
 from config.definitions import ROOT_DIR, DATA_DIR
 
+logger = logging.getLogger(__name__)
+
+# Useful for finding various files
+# TODO: Update to use ROOT_DIR from config/definitions.py
+project_dir = Path(__file__).resolve().parents[2]
+midblock_dir = project_dir / 'data/raw/My Traffic Volumes'
+
+#%%
+
+def get_random_file(directory=DATA_DIR / 'raw/My Traffic Volumes'):
+    from random import choice
+    
+    files = [f for f in Path(directory).glob(pattern = '*.xls')] #glob yields all files matching the pattern argument. '*' means all
+    
+    return choice(files)
+
 #%%
 
 def main():
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
-    logger = logging.getLogger(__name__)
     logger.info('making final data set from raw data')
     
-
+    foo = get_random_file()
 
 if __name__ == '__main__':
-    log_fmt = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_fmt)
-
-    # Useful for finding various files
-    # TODO: Update to use ROOT_DIR from config/definitions.py
-    project_dir = Path(__file__).resolve().parents[2]
-    midblock_dir = project_dir / 'data/raw/My Traffic Volumes'
-
-    # find .env automagically by walking up directories until it's found, then
-    # load up the .env entries as environment variables
+    logging.getLogger().setLevel(logging.DEBUG)
+    
+    # create logger Handlers
+    f_handler = logging.FileHandler('make_dataset.log', mode='w')
+    c_handler = logging.StreamHandler()
+    f_handler.setLevel(logging.INFO)
+    c_handler.setLevel(logging.WARNING)
+    log_fmt = "[%(filename)s:%(lineno)s@%(asctime)s - %(funcName)15s():%(levelname)9s ] %(message)s"
+    f_handler.setFormatter(logging.Formatter(log_fmt))
+    c_log_fmt = "[%(lineno)s@%(asctime)s - %(funcName)s(): %(message)s"
+    c_handler.setFormatter(logging.Formatter(c_log_fmt))
+    
+    # add handlers to the logger
+    logging.getLogger('').addHandler(f_handler)
+    logging.getLogger('').addHandler(c_handler)
 
     main()
-
-
-#%%
-
-def get_random_file(directory=midblock_dir):
-    from random import choice
-    
-    files = [f for f in Path(directory).glob(pattern = '*.xls')] #glob yields all files matching the pattern argument. '*' means all
-    return choice(files)
 
 #%%
 
@@ -390,7 +401,7 @@ def get_turning_sites(directory, start_year):
 
 #%%
 def parse_turning_excel(file = project_dir / 'data/raw/My Turning Movements/081 Avenue and 104 Street 2014-Mar-11.xls'):
-    
+    return None
 
 #%%
 def append_duplicate_site_meta(master_meta, append_meta):
