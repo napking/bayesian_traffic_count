@@ -18,10 +18,9 @@ midblock_dir = project_dir / 'data/raw/My Traffic Volumes'
 #%%
 
 def get_random_file(directory=DATA_DIR / 'raw/My Traffic Volumes'):
-    from random import choice
-    
-    files = [f for f in Path(directory).glob(pattern = '*.xls')] #glob yields all files matching the pattern argument. '*' means all
-    
+    logger.debug('start'.center(20,'~'))
+    from random import choice    
+    files = [f for f in Path(directory).glob(pattern = '*.xls')] #glob yields all files matching the pattern argument. '*' means all    
     return choice(files)
 
 #%%
@@ -30,6 +29,7 @@ def main():
     """ Runs data processing scripts to turn raw data from (../raw) into
         cleaned data ready to be analyzed (saved in ../processed).
     """
+    logger.debug('start'.center(20,'~'))
     logger.info('making final data set from raw data')
     
     foo = get_random_file()
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # create logger Handlers
     f_handler = logging.FileHandler('make_dataset.log', mode='w')
     c_handler = logging.StreamHandler()
-    f_handler.setLevel(logging.INFO)
+    f_handler.setLevel(logging.DEBUG)
     c_handler.setLevel(logging.WARNING)
     log_fmt = "[%(filename)s:%(lineno)s@%(asctime)s - %(funcName)15s():%(levelname)9s ] %(message)s"
     f_handler.setFormatter(logging.Formatter(log_fmt))
@@ -66,10 +66,12 @@ def file_loop_test(directory=midblock_dir):
     print out of all files
 
     '''
-    print("Files and directories in the specified path:")
+    logger.debug('start'.center(20,'~'))
+    logger.info("Files and directories in the specified path:")
     files = Path(directory).glob(pattern = '*.xls') #glob yields all files matching the pattern argument. '*' means all
     for file in files:
-        print(file.stem)
+        logger.info(file.stem)
+        logger.warning('function output recorded in the log file')
     return file
 
 #%%
@@ -87,6 +89,7 @@ def get_names_from_location(string):
         DESCRIPTION.
 
     '''
+    logger.debug('start'.center(20,'~'))
     regex_pattern = ('^\s*' # start of string followed by one or more whitespace
                     '(?P<mainName>\d{2,3}|Gateway)\s*' # mainName group - 2 or 3 digits OR Gateway ; the name of the main street
                     '(\(Whyte\))?\s*'   # OPTIONAL - Phrase '(Whyte)' is sometimes used to describe 82 Ave
@@ -127,6 +130,7 @@ def get_date_from_filename(filename = '083 Avenue West of 098 Street 2015-Sep-23
     year as int, month as string, date as int
 
     '''
+    logger.debug('start'.center(20,'~'))
     regex_pattern = r'(?P<year>\d{4})-(?P<month>\w{3})-(?P<date>\d{2})\s*$'
     # Pattern group 1: { name: 'year', value: 4 digits } \
         # group 2: { name: 'month', value: 3 word characters } \
@@ -151,6 +155,7 @@ def parse_midblock_excel(file = midblock_dir / '083 Avenue West of 098 Street 20
     DataFrame in tall format
     meta data of the analysis site
     '''    
+    logger.debug('start'.center(20,'~'))
     df = pd.read_excel(file, header=None)  
     meta = get_meta_data(df)
     
@@ -192,6 +197,7 @@ def get_midblock_data_table(df,start,end,meta,num_header_rows=3):
         number of rows that act as column / value identifiers
     
     '''
+    logger.debug('start'.center(20,'~'))
     # strip down to only the data table and headers
     df = df.iloc[start - num_header_rows : end]
     df = df.reset_index(drop=True)
@@ -271,6 +277,7 @@ def get_meta_data(df):
     
     
     '''
+    logger.debug('start'.center(20,'~'))
     meta = {}
     search_pattern = ['ADT','Site Number','Location']
     for pat in search_pattern:
@@ -295,6 +302,7 @@ def get_meta_data(df):
 
 #%%   
 def get_index(df, search_pattern):
+    logger.debug('start'.center(20,'~'))
     #explanation of this code:
         #df.isin([*]) returns a true/false table of the entire dataframe where * is found
         #df[ above_blah ] returns a NaN / value table as above
@@ -307,6 +315,7 @@ def get_index(df, search_pattern):
 #%%
 
 def get_traffic_sites(directory=midblock_dir, start_year=1999, **kwargs):
+    logger.debug('start'.center(20,'~'))
     
     sites = {}
     
@@ -325,36 +334,42 @@ def get_traffic_sites(directory=midblock_dir, start_year=1999, **kwargs):
     sites = {}
     
 def get_midblock_sites(directory, start_year):
+    logger.debug('start'.center(20,'~'))
+    
     sites = {}
     
     # confirm that directory is good
     if directory.name != 'My Traffic Volumes':
-        print('~~ Incorrect Directory for get_midblock_sites()')
+        logger.error('~~ Incorrect Directory for get_midblock_sites()')
         return None
     
+    logger.debug('Start loop of all files')
     # Start a Loop of all files
     # glob searches for all files that match the given pattern. "*.xls" only finds excel files
     midblock_files = Path(directory).glob(pattern = "*.xls")
     for file in midblock_files:
+        logger.debug(f'{file.stem}')
         try:
             file_date = get_date_from_filename(file.stem)
+            logger.info(f'{file.stem} date found')
         except:
             file_date['year'] = 'None'
-            print(f'{file.stem} could not be parsed')
+            logger.warning(f'{file.stem} could not be parsed')
             continue
             
         # Select only files after a specific year.
         if file_date['year'] >= start_year:
-            
+            logger.debug(f'{file.stem} year is good')
             data_table, meta = parse_midblock_excel(file)
+            logger.debug(f'{file.stem} got data_table and meta')
             if not meta['Site Number'] in sites:
                 # If site number is not already in sites, simply create a new key-value pair
                 sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
-                print(f'{file.stem} successfully added')
+                logger.info(f'{file.stem} successfully added')
             else:
                 # merge meta and data
-                print(f'Site number {meta["Site Number"]} already exists. \n' \
-                      f'~~~Source file is {file.stem}')
+                logger.info(f'Site number {meta["Site Number"]} already exists. \n' \
+                      f'~{file.stem} Attempting merge')
                 
                 # Try to append meta-data into sites
                 if not append_duplicate_site_meta(
@@ -362,45 +377,22 @@ def get_midblock_sites(directory, start_year):
                         append_meta= meta):
                     # if immutable keys are not identical, create a new site
                     sites[meta['Site Number'] ] = {'meta': meta, 'data': data_table}
+                    logger.debug(f'{file.stem} successfully added')
                 
                 # Try to append dataframe into sites
                 sites[meta['Site Number']]['data']= append_duplicate_site_data(
                     master_data= sites[meta['Site Number']]['data'], 
                     append_data= data_table)
+                logger.info(f'{file.stem} count data added to dataframe')
         else:
             continue
     
     return sites
 
-def get_turning_sites(directory, start_year):
-    sites = {}
-    
-    # confirm that directory is good
-    if directory.name != 'My Turning Movements':
-        print('~~ Incorrect Directory for get_turning_sites()')
-        return None
-    
-    # start loop of all files
-    # glob searches for all files that matche the given pattern.
-    turning_files = Path(directory).glob(pattern = '*.xls')
-    
-    #TODO: switch to looping through all files
-    #TODO: this is nearly identical to get_midblock sites : prevent duplication by moving to common function
-    file = Path('C:/Users/Dave/MyPythonScripts/bayesian_traffic_count/data/raw/My Turning Movements/081 Avenue and 104 Street 2014-Mar-11.xls')
-    try: 
-        file_date = get_date_from_filename(file.stem)
-    except:
-        file_date['year'] = 'None'
-        print(f'{file.stem} could not be parsed')
-    
-    
-    if file_date['year'] >= start_year:
-        data_table, meta = parse_turning_excel(file)
-        
-        #TODO: do the rest of the things
 
 #%%
 def parse_turning_excel(file = project_dir / 'data/raw/My Turning Movements/081 Avenue and 104 Street 2014-Mar-11.xls'):
+    logger.debug('start'.center(20,'~'))
     return None
 
 #%%
@@ -426,20 +418,20 @@ def append_duplicate_site_meta(master_meta, append_meta):
             
             *** The alternate solution is to assign keys to values representing the source excel file
     '''
-    
+    logger.debug('start'.center(20,'~'))
     # Check the immutable, aka. common values, between the dictionaries
     immutable_keys = {'Cross Reference','Cross Street','Main Street','Site Number'}
     master_immutable = {key:value for key,value in master_meta.items() if key in immutable_keys}
     append_immutable = {key:value for key,value in append_meta.items() if key in immutable_keys}
     if not master_immutable == append_immutable:
-        print(f'ERROR! The meta data for Site Number {master_meta["Site Number"]} is not the same between master and append')
+        logger.error(f'The meta data for Site Number {master_meta["Site Number"]} is not the same between master and append')
         # TODO: Do something when this error occurs
         # initial experience susggests the source is in "Location" names from excel files
             # see the regex in get_names_from_location
             
         # perhaps an intermediary step is to create a new entry in sites, eg. site_number: ######-A
         append_meta['Site Number'] = str(append_meta['Site Number']) + 'A'
-        print(f'\t  Changed Site Number: {append_meta["Site Number"]}')
+        logger.error(f'\t  Changed Site Number: {append_meta["Site Number"]}')
         return False
         
     # Check the mutable, aka. the varrying values
@@ -460,10 +452,11 @@ def append_duplicate_site_meta(master_meta, append_meta):
         # possibility of erroneous/non-standard entries
         
     
-    print(f'Site: {master_meta["Site Number"]} has appended the new values')
+    logger.info(f'Site: {master_meta["Site Number"]} has appended the new values')
     
     return True
 
 #%%
 def append_duplicate_site_data(master_data, append_data):
+    logger.debug('start'.center(20,'~'))
     return pd.concat([master_data, append_data]).reset_index(drop=True)
